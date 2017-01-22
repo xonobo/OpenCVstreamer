@@ -14,8 +14,9 @@
 class VideoStreamer
 {
 public:
-	VideoStreamer(cv::VideoWriter &writer, SharedBuffer &imgBuffer);
-	VideoStreamer(cv::VideoCapture &cap, SharedBuffer &imgBuffer);
+	VideoStreamer();
+	VideoStreamer(cv::VideoWriter *writer, SharedBuffer *imgBuffer);
+	VideoStreamer(cv::VideoCapture *cap, SharedBuffer *imgBuffer);
 	virtual ~VideoStreamer();
 
 	void play();
@@ -25,8 +26,12 @@ private:
 	cv::VideoWriter *streamWriter;
 	cv::VideoCapture *streamCap;
 	SharedBuffer *imageBuffer;
+	cv::Mat captureBuffer;
 	bool ioFlag; // true for reader - false for writer
 	bool runFlag;
+	std::mutex mtx;
+
+	bool getRunFlag();
 	void run();
 };
 

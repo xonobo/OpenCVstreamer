@@ -7,17 +7,63 @@
 
 #include "VideoStreamer.h"
 
-VideoStreamer::VideoStreamer(cv::VideoWriter &writer, SharedBuffer &imgBuffer)
+VideoStreamer::VideoStreamer()
 {
-
+	streamCap = NULL;
+	streamWriter = NULL;
+	imageBuffer = NULL;
 }
 
-VideoStreamer::VideoStreamer(cv::VideoCapture &cap, SharedBuffer &imgBuffer)
+VideoStreamer::VideoStreamer(cv::VideoWriter *writer, SharedBuffer *imgBuffer)
 {
-
+	streamCap = NULL;
+	streamWriter = writer;
+	imageBuffer = imgBuffer;
 }
 
-VideoStreamer::~VideoStreamer() {
-	// TODO Auto-generated destructor stub
+VideoStreamer::VideoStreamer(cv::VideoCapture *cap, SharedBuffer *imgBuffer)
+{
+	streamWriter = NULL;
+	streamCap = cap;
+	imageBuffer = imgBuffer;
 }
 
+VideoStreamer::~VideoStreamer()
+{
+}
+
+
+void VideoStreamer::play()
+{
+	std::lock_guard<std::mutex> lockGuard(mtx);
+	runFlag = true;
+}
+
+void VideoStreamer::pause()
+{
+	std::lock_guard<std::mutex> lockGuard(mtx);
+	runFlag = false;
+}
+
+bool VideoStreamer::getRunFlag()
+{
+	std::lock_guard<std::mutex> lockGuard(mtx);
+	return runFlag;
+}
+
+void VideoStreamer::run()
+{
+	while ( getRunFlag() )
+	{
+		if (streamWriter)
+		{
+			*streamWriter << imageBuffer->getBuffer();
+		}
+
+		if (streamCap)
+		{
+			*streamCap >> captureBuffer;
+			imageBuffer->setBuffer( captureBuffer );
+		}
+	}
+}
