@@ -6,9 +6,13 @@
  */
 
 #include "VideoStreamer.h"
+#include <thread>
+#include <chrono>
 
 VideoStreamer::VideoStreamer()
 {
+	runFlag = false;
+	ioFlag = false;
 	streamCap = NULL;
 	streamWriter = NULL;
 	imageBuffer = NULL;
@@ -16,6 +20,8 @@ VideoStreamer::VideoStreamer()
 
 VideoStreamer::VideoStreamer(cv::VideoWriter *writer, SharedBuffer *imgBuffer)
 {
+	runFlag = false;
+	ioFlag = false;
 	streamCap = NULL;
 	streamWriter = writer;
 	imageBuffer = imgBuffer;
@@ -23,6 +29,8 @@ VideoStreamer::VideoStreamer(cv::VideoWriter *writer, SharedBuffer *imgBuffer)
 
 VideoStreamer::VideoStreamer(cv::VideoCapture *cap, SharedBuffer *imgBuffer)
 {
+	runFlag = false;
+	ioFlag = false;
 	streamWriter = NULL;
 	streamCap = cap;
 	imageBuffer = imgBuffer;
@@ -30,13 +38,19 @@ VideoStreamer::VideoStreamer(cv::VideoCapture *cap, SharedBuffer *imgBuffer)
 
 VideoStreamer::~VideoStreamer()
 {
+	runFlag = false;
 }
-
 
 void VideoStreamer::play()
 {
 	std::lock_guard<std::mutex> lockGuard(mtx);
-	runFlag = true;
+	if (!runFlag)
+	{
+		runFlag = true;
+		std::thread th(&VideoStreamer::run, this);
+		th.join();
+	}
+
 }
 
 void VideoStreamer::pause()
@@ -45,15 +59,9 @@ void VideoStreamer::pause()
 	runFlag = false;
 }
 
-bool VideoStreamer::getRunFlag()
-{
-	std::lock_guard<std::mutex> lockGuard(mtx);
-	return runFlag;
-}
-
 void VideoStreamer::run()
 {
-	while ( getRunFlag() )
+	while ( runFlag )
 	{
 		if (streamWriter)
 		{

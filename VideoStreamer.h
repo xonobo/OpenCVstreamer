@@ -8,6 +8,7 @@
 #ifndef VIDEOSTREAMER_H_
 #define VIDEOSTREAMER_H_
 
+#include <atomic>
 #include <opencv2/opencv.hpp>
 #include "SharedBuffer.h"
 
@@ -28,10 +29,9 @@ private:
 	SharedBuffer *imageBuffer;
 	cv::Mat captureBuffer;
 	bool ioFlag; // true for reader - false for writer
-	bool runFlag;
+	std::atomic<bool> runFlag;
 	std::mutex mtx;
 
-	bool getRunFlag();
 	void run();
 };
 
